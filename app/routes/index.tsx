@@ -1,4 +1,4 @@
-import type { Route } from "./+types"
+import { redirect } from "react-router"
 
 export function meta() {
     return [
@@ -7,8 +7,8 @@ export function meta() {
     ]
 }
 
-export default function Index() {
-    return (
-        <h1>Home</h1>
-    )
+export async function loader() {
+    return redirect("/payin", 302)
 }
+
+export default function Index() {}
