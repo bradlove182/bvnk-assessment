@@ -1,24 +1,20 @@
-
 export interface Success<T> {
-    data: T;
-    error: undefined;
+    data: T
+    error: undefined
 }
 
-export interface Failure{
-    data: undefined;
-    error: RequestError;
+export interface Failure {
+    data: undefined
+    error: RequestError
 }
 
-export type RequestResponse<T> = Success<T> | Failure;
+export type RequestResponse<T> = Success<T> | Failure
 
 export interface RequestError {
+    code: string
+    status: string
+    message: string
     requestId: string
-    errorList: {
-        requestId: string | null
-        code: string
-        parameter: string
-        message: string
-    }[]
 }
 
 export interface Quote {
@@ -56,29 +52,38 @@ export interface Quote {
 }
 
 export function isRequestError(error: unknown): error is RequestError {
-    return typeof error === "object" && error !== null && "requestId" in error && "errorList" in error
+    return typeof error === "object" && error !== null && "requestId" in error
 }
 
 export async function fetchRequest<T>(input: RequestInfo | URL, init?: RequestInit): Promise<RequestResponse<T>> {
-    const response = await fetch(input, init);
+    const response = await fetch(input, init)
 
     const json = await response.json()
 
-    if(isRequestError(json)){
+    if (isRequestError(json)) {
         return {
             data: undefined,
-            error: json
+            error: json,
         }
     }
 
     return {
         data: json,
-        error: undefined
+        error: undefined,
     }
 }
 
 export async function getQuote(uuid: string) {
     return fetchRequest<Quote>(`https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/summary`, {
-        method: "GET"
+        method: "GET",
+    })
+}
+
+export async function updateQuote(args: { uuid: string, currency: string, payInMethod: "crypto" }) {
+    const { uuid, ...rest } = args
+
+    return fetchRequest<Quote>(`https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/update/summary`, {
+        method: "PUT",
+        body: JSON.stringify({ ...rest }),
     })
 }
