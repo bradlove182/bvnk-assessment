@@ -57,4 +57,5 @@ function Button({
     )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- These variants are tightly coupled
 export { Button, buttonVariants }

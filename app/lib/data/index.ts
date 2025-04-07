@@ -29,7 +29,7 @@ export interface Quote {
     reference: string
     type: string
     subType: string
-    status: string
+    status: "EXPIRED" | "PENDING"
     displayCurrency: { currency: string, amount: number, actual: number }
     walletCurrency: { currency: string, amount: number, actual: number }
     paidCurrency: { currency: string | null, amount: number, actual: number }
@@ -56,7 +56,14 @@ export function isRequestError(error: unknown): error is RequestError {
 }
 
 export async function fetchRequest<T>(input: RequestInfo | URL, init?: RequestInit): Promise<RequestResponse<T>> {
-    const response = await fetch(input, init)
+    const requestInit: RequestInit = {
+        headers: {
+            "Content-Type": "application/json",
+        },
+        ...init,
+    }
+
+    const response = await fetch(input, requestInit)
 
     const json = await response.json()
 
