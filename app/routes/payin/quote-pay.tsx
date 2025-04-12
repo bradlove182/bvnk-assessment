@@ -6,6 +6,7 @@ import { getQuote } from "@lib/data"
 import { useCountdown } from "@lib/hooks/countdown"
 import { QRCodeSVG } from "qrcode.react"
 import { redirect, useFetcher } from "react-router"
+import { Loader } from "@lib/components/ui/loader"
 
 export function meta() {
     return [
@@ -58,6 +59,8 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
     const quote: RequestResponse<Quote> = fetcher.data || loaderData.quote
 
+    const loading = fetcher.state !== "idle"
+
     const { hours, minutes, seconds } = useCountdown(quote.data?.expiryDate, () => {
         fetcher.submit(null, { method: "POST" })
     })
@@ -98,7 +101,11 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                         Time left to pay
                     </span>
                     <span>
-                        {`${hours}:${minutes}:${seconds}`}
+                        {
+                            loading
+                                ? <Loader />
+                                : `${hours}:${minutes}:${seconds}`
+                        }
                     </span>
                 </div>
             </CardContent>
