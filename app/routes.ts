@@ -5,7 +5,7 @@ export default [
     index("routes/index.tsx"),
     route("payin", "routes/payin/index.tsx", [
         route(":uuid", "routes/payin/quote.tsx"),
-        route(":uuid/pay", "routes/payin/pay-quote.tsx"),
-        route(":uuid/expired", "routes/payin/expired-quote.tsx"),
+        route(":uuid/pay", "routes/payin/quote-pay.tsx"),
+        route(":uuid/expired", "routes/payin/quote-expired.tsx"),
     ]),
 ] satisfies RouteConfig

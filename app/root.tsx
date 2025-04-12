@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
     return (
-        <main className="grid h-dvh w-dvw items-center justify-center p-4 max-w-[1024px] m-auto">
+        <main className="grid h-dvh w-dvw items-center justify-center p-4 m-auto">
             <Outlet />
         </main>
     )

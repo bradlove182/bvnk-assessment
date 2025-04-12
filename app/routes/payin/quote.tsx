@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@lib/components/ui/label"
 import { Loader } from "@lib/components/ui/loader"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@lib/components/ui/select"
-import { getQuote, updateQuote } from "@lib/data"
+import { getQuote, payQuote, updateQuote } from "@lib/data"
 import { useCountdown } from "@lib/hooks/countdown"
 import { useCallback } from "react"
 import { redirect, useFetcher } from "react-router"
@@ -24,6 +24,10 @@ export async function loader({ params }: Route.LoaderArgs) {
         return redirect(`/payin/${params.uuid}/expired`)
     }
 
+    if (quote.data && quote.data.quoteStatus === "ACCEPTED") {
+        return redirect(`/payin/${params.uuid}/pay`)
+    }
+
     return { quote }
 }
 
@@ -36,12 +40,31 @@ export async function action({
     const formData = await request.formData()
 
     const currency = formData.get("currency")
+    const accepted = formData.get("accepted")
 
     if (currency && typeof currency === "string") {
         const quote = await updateQuote({ uuid, currency, payInMethod: "crypto" })
 
         if (quote.data && quote.data.status === "EXPIRED") {
             return redirect(`/payin/${params.uuid}/expired`)
+        }
+
+        if (quote.data && quote.data.quoteStatus === "ACCEPTED") {
+            return redirect(`/payin/${params.uuid}/pay`)
+        }
+
+        return quote
+    }
+
+    if (accepted && accepted === "true") {
+        const quote = await payQuote(uuid)
+
+        if (quote.data && quote.data.status === "EXPIRED") {
+            return redirect(`/payin/${params.uuid}/expired`)
+        }
+
+        if (quote.data && quote.data.quoteStatus === "ACCEPTED") {
+            return redirect(`/payin/${params.uuid}/pay`)
         }
 
         return quote
@@ -59,8 +82,8 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         fetcher.submit({ currency }, { method: "POST" })
     }, [fetcher])
 
-    const { minutes, seconds } = useCountdown(
-        quote.data?.acceptanceExpiryDate ?? 0,
+    const { hours, minutes, seconds } = useCountdown(
+        quote.data?.acceptanceExpiryDate,
         () => {
             if (quote.data?.paidCurrency.currency) {
                 handleOnSelectCurrency(quote.data.paidCurrency.currency)
@@ -68,9 +91,11 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         },
     )
 
-    const handleOnClickTryAgain = useCallback(() => {
-        window.location.reload()
-    }, [])
+    const handleOnClickConfirm = useCallback(() => {
+        if (quote.data?.paidCurrency.currency) {
+            fetcher.submit({ accepted: true }, { method: "POST" })
+        }
+    }, [fetcher, quote.data?.paidCurrency.currency])
 
     const currencyOptions = [
         {
@@ -93,16 +118,9 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                 <CardHeader>
                     <CardTitle>{quote.error.message}</CardTitle>
                     <CardDescription>
-                        Request ID:
-                        {" "}
-                        {quote.error.requestId}
+                        {`Request ID: ${quote.error.requestId}`}
                     </CardDescription>
                 </CardHeader>
-                <CardFooter className="justify-center">
-                    <Button onClick={handleOnClickTryAgain}>
-                        Try Again
-                    </Button>
-                </CardFooter>
             </Card>
         )
     }
@@ -164,13 +182,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                                         {
                                             loading
                                                 ? <Loader />
-                                                : (
-                                                        <>
-                                                            {quote.data.paidCurrency.amount}
-                                                            {" "}
-                                                            {quote.data.paidCurrency.currency}
-                                                        </>
-                                                    )
+                                                : `${quote.data.displayCurrency.amount} ${quote.data.displayCurrency.currency}`
                                         }
                                     </span>
                                 </div>
@@ -182,15 +194,8 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                                         {
                                             loading
                                                 ? <Loader />
-                                                : (
-                                                        <>
-                                                            {minutes}
-                                                            :
-                                                            {seconds}
-                                                        </>
-                                                    )
+                                                : `${hours}:${minutes}:${seconds}`
                                         }
-
                                     </span>
                                 </div>
                             </div>
@@ -200,7 +205,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
             <CardFooter>
                 {quote.data.quoteExpiryDate
                     ? (
-                            <Button>
+                            <Button className="w-full" onClick={handleOnClickConfirm}>
                                 Confirm
                             </Button>
                         )

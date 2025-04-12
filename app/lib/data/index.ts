@@ -23,25 +23,31 @@ export interface Quote {
     merchantId: string
     dateCreated: number
     expiryDate: number
-    quoteExpiryDate: number | null
-    acceptanceExpiryDate: number | null
-    quoteStatus: string
+    quoteExpiryDate: number
+    acceptanceExpiryDate?: number
+    quoteStatus: "ACCEPTED" | "PENDING"
     reference: string
     type: string
     subType: string
     status: "EXPIRED" | "PENDING"
     displayCurrency: { currency: string, amount: number, actual: number }
     walletCurrency: { currency: string, amount: number, actual: number }
-    paidCurrency: { currency: string | null, amount: number, actual: number }
+    paidCurrency: { currency: string, amount: number, actual: number }
     feeCurrency: { currency: string, amount: number, actual: number }
-    networkFeeCurrency: { currency: string | null, amount: number, actual: number }
-    displayRate: number | null
-    exchangeRate: number | null
-    address: string | null
+    networkFeeCurrency: { currency: string, amount: number, actual: number }
+    displayRate: number
+    exchangeRate: number
+    address: {
+        address: string
+        tag: string
+        protocol: string
+        uri: string
+        alternatives: string[]
+    }
     returnUrl: string
     redirectUrl: string
     transactions: any[]
-    refund: any | null
+    refund: any
     refunds: any[]
     currencyOptions: any[]
     flow: string
@@ -92,5 +98,14 @@ export async function updateQuote(args: { uuid: string, currency: string, payInM
     return fetchRequest<Quote>(`https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/update/summary`, {
         method: "PUT",
         body: JSON.stringify({ ...rest }),
+    })
+}
+
+export async function payQuote(uuid: string) {
+    return fetchRequest<Quote>(`https://api.sandbox.bvnk.com/api/v1/pay/${uuid}/accept/summary`, {
+        method: "PUT",
+        body: JSON.stringify({
+            successUrl: "no_url",
+        }),
     })
 }
