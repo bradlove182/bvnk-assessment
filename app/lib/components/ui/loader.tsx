@@ -5,7 +5,7 @@ export function Loader({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             className={cn(
-                "flex items-center justify-center animate-spin h-4 w-4",
+                "flex items-center justify-center animate-spin h-4 w-4 text-primary",
                 className,
             )}
             {...props}

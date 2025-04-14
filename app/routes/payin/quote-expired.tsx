@@ -10,7 +10,7 @@ export function meta() {
 
 export default function Index() {
     return (
-        <Card className="w-76 lg:w-92 text-center p-10">
+        <Card className="w-76 lg:w-96 text-center p-10">
             <CardHeader>
                 <CardTitle className="flex flex-col gap-2 items-center justify-center">
                     <CircleAlertIcon role="presentation" className="size-12 text-destructive" />

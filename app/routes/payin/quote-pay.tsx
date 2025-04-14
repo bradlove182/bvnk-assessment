@@ -2,11 +2,11 @@ import type { Quote, RequestResponse } from "@lib/data"
 import type { Route } from "./+types/quote-pay"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lib/components/ui/card"
 import { CopyableValue } from "@lib/components/ui/copyable-value"
+import { Loader } from "@lib/components/ui/loader"
 import { getQuote } from "@lib/data"
 import { useCountdown } from "@lib/hooks/countdown"
 import { QRCodeSVG } from "qrcode.react"
 import { redirect, useFetcher } from "react-router"
-import { Loader } from "@lib/components/ui/loader"
 
 export function meta() {
     return [
@@ -66,7 +66,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
     })
 
     return (
-        <Card className="w-76 lg:w-92">
+        <Card className="w-76 lg:w-96">
             <CardHeader>
                 <CardTitle className="text-center text-xl font-medium">
                     {`Pay with ${getCryptoCurrencyName(quote.data?.paidCurrency.currency ?? "")}`}
@@ -76,17 +76,17 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="divide-y divide-border">
-                <div className="flex justify-between items-center">
-                    <span>Amount due</span>
+                <div className="flex justify-between items-center py-3 text-sm">
+                    <span className="text-muted-foreground">Amount due</span>
                     <CopyableValue
                         maxLength={12}
                         value={quote.data?.paidCurrency.amount?.toString() ?? ""}
                         suffix={` ${quote.data?.paidCurrency.currency}`}
                     />
                 </div>
-                <div className="flex flex-col items-center justify-center gap-4">
-                    <div className="flex justify-between items-center w-full">
-                        <span>
+                <div className="flex flex-col items-center justify-center py-3 gap-4">
+                    <div className="flex justify-between items-center w-full text-sm">
+                        <span className="text-muted-foreground">
                             {`${quote.data?.paidCurrency.currency} Address`}
                         </span>
                         <CopyableValue maxLength={12} value={quote.data?.address?.address ?? ""} />
@@ -96,11 +96,11 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                         {quote.data?.address?.address}
                     </span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <span>
+                <div className="flex justify-between items-center py-3 text-sm">
+                    <span className="text-muted-foreground">
                         Time left to pay
                     </span>
-                    <span>
+                    <span className="font-medium">
                         {
                             loading
                                 ? <Loader />

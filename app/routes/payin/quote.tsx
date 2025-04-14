@@ -10,6 +10,21 @@ import { useCountdown } from "@lib/hooks/countdown"
 import { useCallback } from "react"
 import { redirect, useFetcher } from "react-router"
 
+const currencyOptions = [
+    {
+        label: "Bitcoin",
+        value: "BTC",
+    },
+    {
+        label: "Ethereum",
+        value: "ETH",
+    },
+    {
+        label: "Litecoin",
+        value: "LTC",
+    },
+] as const
+
 export function meta() {
     return [
         { title: "BVNK | Accept Quote" },
@@ -40,35 +55,31 @@ export async function action({
     const formData = await request.formData()
 
     const currency = formData.get("currency")
-    const accepted = formData.get("accepted")
+    const action = formData.get("action")
 
-    if (currency && typeof currency === "string") {
-        const quote = await updateQuote({ uuid, currency, payInMethod: "crypto" })
+    let quote: RequestResponse<Quote> | undefined
 
-        if (quote.data && quote.data.status === "EXPIRED") {
-            return redirect(`/payin/${params.uuid}/expired`)
-        }
-
-        if (quote.data && quote.data.quoteStatus === "ACCEPTED") {
-            return redirect(`/payin/${params.uuid}/pay`)
-        }
-
-        return quote
+    if (action === "get-quote") {
+        quote = await getQuote(uuid)
     }
 
-    if (accepted && accepted === "true") {
-        const quote = await payQuote(uuid)
-
-        if (quote.data && quote.data.status === "EXPIRED") {
-            return redirect(`/payin/${params.uuid}/expired`)
-        }
-
-        if (quote.data && quote.data.quoteStatus === "ACCEPTED") {
-            return redirect(`/payin/${params.uuid}/pay`)
-        }
-
-        return quote
+    if (currency && typeof currency === "string" && action === "select-currency") {
+        quote = await updateQuote({ uuid, currency, payInMethod: "crypto" })
     }
+
+    if (action === "accept-quote") {
+        quote = await payQuote(uuid)
+    }
+
+    if (quote && quote.data && quote.data.status === "EXPIRED") {
+        return redirect(`/payin/${params.uuid}/expired`)
+    }
+
+    if (quote && quote.data && quote.data.quoteStatus === "ACCEPTED") {
+        return redirect(`/payin/${params.uuid}/pay`)
+    }
+
+    return quote
 }
 
 export default function Index({ loaderData }: Route.ComponentProps) {
@@ -79,7 +90,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
     const loading = fetcher.state !== "idle"
 
     const handleOnSelectCurrency = useCallback((currency: string) => {
-        fetcher.submit({ currency }, { method: "POST" })
+        fetcher.submit({ currency, action: "select-currency" }, { method: "POST" })
     }, [fetcher])
 
     const { hours, minutes, seconds } = useCountdown(
@@ -93,24 +104,9 @@ export default function Index({ loaderData }: Route.ComponentProps) {
 
     const handleOnClickConfirm = useCallback(() => {
         if (quote.data?.paidCurrency.currency) {
-            fetcher.submit({ accepted: true }, { method: "POST" })
+            fetcher.submit({ action: "accept-quote" }, { method: "POST" })
         }
     }, [fetcher, quote.data?.paidCurrency.currency])
-
-    const currencyOptions = [
-        {
-            label: "Bitcoin",
-            value: "BTC",
-        },
-        {
-            label: "Ethereum",
-            value: "ETH",
-        },
-        {
-            label: "Litecoin",
-            value: "LTC",
-        },
-    ] as const
 
     if (quote.error) {
         return (
@@ -126,7 +122,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
     }
 
     return (
-        <Card className="w-76 lg:w-92 text-center">
+        <Card className="w-76 lg:w-96 text-center">
             <CardHeader>
                 <CardTitle>
                     <h3 className="font-medium text-xl">
@@ -150,11 +146,16 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                     </span>
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
                 <fetcher.Form method="POST">
                     <fieldset className="space-y-1">
                         <Label htmlFor="currency">Pay with</Label>
-                        <Select name="currency" defaultValue={quote.data.paidCurrency.currency ?? undefined} onValueChange={handleOnSelectCurrency}>
+                        <Select
+                            disabled={loading}
+                            name="currency"
+                            defaultValue={quote.data.paidCurrency.currency ?? undefined}
+                            onValueChange={handleOnSelectCurrency}
+                        >
                             <SelectTrigger id="currency" className="w-full">
                                 <SelectValue placeholder="Select Currency" />
                             </SelectTrigger>
@@ -175,22 +176,22 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                 </fetcher.Form>
                 {quote.data.quoteExpiryDate
                     ? (
-                            <div className="divide-y divide-border">
-                                <div className="flex justify-between items-center">
-                                    <span>Amount due</span>
-                                    <span>
+                            <div className="divide-y divide-border border-t border-b">
+                                <div className="flex justify-between items-center py-3 text-sm">
+                                    <span className="text-muted-foreground">Amount due</span>
+                                    <span className="font-medium">
                                         {
                                             loading
                                                 ? <Loader />
-                                                : `${quote.data.displayCurrency.amount} ${quote.data.displayCurrency.currency}`
+                                                : `${quote.data.paidCurrency.amount} ${quote.data.paidCurrency.currency}`
                                         }
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span>
+                                <div className="flex justify-between items-center py-3 text-sm">
+                                    <span className="text-muted-foreground">
                                         Quoted price expires in
                                     </span>
-                                    <span>
+                                    <span className="font-medium">
                                         {
                                             loading
                                                 ? <Loader />
@@ -205,7 +206,11 @@ export default function Index({ loaderData }: Route.ComponentProps) {
             <CardFooter>
                 {quote.data.quoteExpiryDate
                     ? (
-                            <Button className="w-full" onClick={handleOnClickConfirm}>
+                            <Button
+                                disabled={loading}
+                                className="w-full"
+                                onClick={handleOnClickConfirm}
+                            >
                                 Confirm
                             </Button>
                         )

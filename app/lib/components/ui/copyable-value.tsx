@@ -55,13 +55,13 @@ export function CopyableValue({
             )}
             {...props}
         >
-            <div title={displayText}>{truncatedText}</div>
+            <div title={displayText} className="font-medium">{truncatedText}</div>
             {suffix && <span>{suffix}</span>}
             <Button
                 variant="ghost"
                 size="sm"
                 onClick={copyToClipboard}
-                className="text-primary shrink-0 px-0 py-0 hover:bg-transparent cursor-pointer"
+                className="text-primary shrink-0 px-0 py-0 hover:bg-transparent cursor-pointer h-fit"
             >
                 {copied
                     ? <span>Copied!</span>
