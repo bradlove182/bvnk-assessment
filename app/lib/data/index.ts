@@ -13,8 +13,9 @@ export type RequestResponse<T> = Success<T> | Failure
 export interface RequestError {
     code: string
     status: string
-    message: string
+    message?: string
     requestId: string
+    errorList?: RequestError[]
 }
 
 export interface Quote {
@@ -74,9 +75,12 @@ export async function fetchRequest<T>(input: RequestInfo | URL, init?: RequestIn
     const json = await response.json()
 
     if (isRequestError(json)) {
+        // There can potentially be multiple errors, but we only want the first one for the sake of simplicity
+        const error = json.errorList?.[0]
         return {
             data: undefined,
-            error: json,
+            // We want to include the original error in the response for debugging purposes
+            error: error ? { ...error, ...json } : json,
         }
     }
 

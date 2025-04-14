@@ -112,9 +112,14 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         return (
             <Card className="w-76 lg:w-92 text-center">
                 <CardHeader>
-                    <CardTitle>{quote.error.message}</CardTitle>
-                    <CardDescription>
-                        {`Request ID: ${quote.error.requestId}`}
+                    <CardTitle>{`Error: ${quote.error.message}`}</CardTitle>
+                    <CardDescription className="space-y-2">
+                        <div>
+                            {quote.error.code}
+                        </div>
+                        <div>
+                            {`Request ID: ${quote.error.requestId}`}
+                        </div>
                     </CardDescription>
                 </CardHeader>
             </Card>
